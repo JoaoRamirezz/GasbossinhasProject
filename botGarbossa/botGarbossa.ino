@@ -1,11 +1,10 @@
-#include <b64.h>
-#include <HttpClient.h>
+#include <HTTPClient.h>
 
 #include <WiFi.h>    
 #include <UrlEncode.h>
 
 const char* ssid = "iPhone de Ramirez";
-const char* password = "trabalhoesp32";
+const char* password = "espnetramirez";
 HTTPClient http;
 // +international_country_code + phone number
 // Portugal +351, example: +351912345678
