@@ -48,7 +48,7 @@ void setup(){
 }
 
 void loop(){
-   if (Firebase.ready() && signupOK) {
+  if (Firebase.ready() && signupOK) {
 
     if (!Firebase.RTDB.setString(&fbdo, "Test", "Testing")) {
       Serial.println("ERRO: " + fbdo.errorReason());
