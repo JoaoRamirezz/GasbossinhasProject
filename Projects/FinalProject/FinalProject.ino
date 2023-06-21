@@ -1,59 +1,32 @@
-#include <DabbleESP32.h>
 #include <Firebase_ESP_Client.h>
 #include "addons/TokenHelper.h"
 #include "addons/RTDBHelper.h"
-#include <HTTPClient.h>
-#include <WiFi.h>    
-#include <UrlEncode.h>
+#include <WiFi.h>
 
-#define API_KEY "REPLACE_WITH_YOUR_FIREBASE_PROJECT_API_KEY"
-#define DATABASE_URL "REPLACE_WITH_YOUR_FIREBASE_DATABASE_URL" 
+#define WIFI_SSID "iPhone de Maite"
+#define WIFI_PASSWORD "maite2302"
 
-#define CUSTOM_SETTINGS
-#define INCLUDE_LEDCONTROL_MODULE
-#define LED 13
+#define DATABASE_URL "https://iot-senai-68871-default-rtdb.firebaseio.com/"
+#define API_KEY "AIzaSyDnzcrPDg26EvPpAc6wGhME3StJbx1qttg"
+
+#define CONN_PIN 35
+#define POT_PIN 34
 
 FirebaseData fbdo;
 FirebaseAuth auth;
 FirebaseConfig config;
 
+int value = 0;
 bool signupOK = false;
-unsigned long lastTime = 0;
-const char* ssid = "iPhone de Ramirez";
-const char* password = "espnetramirez";
-
-void sendMessage(String message){
-  
-  // Data to send with HTTP POST
-  String url = "https://api.callmebot.com/whatsapp.php?phone=" + phoneNumber + "&apikey=" + apiKey + "&text=" + urlEncode(message);    
-  
-  http.begin(url);
-
-  // Specify content-type header
-  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
-  
-  // Send HTTP POST request
-  int httpResponseCode = http.POST(url);
-  if (httpResponseCode == 200){
-    Serial.print("Message sent successfully");
-  }
-  else{
-    Serial.println("Error sending the message");
-    Serial.print("HTTP response code: ");
-    Serial.println(httpResponseCode);
-  }
-
-  // Free resources
-  http.end();
-}
+bool isCriticalValue = false;
 
 void setup() {
   Serial.begin(115200);
 
-  WiFi.begin(ssid, password);
-  
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
   Serial.print("Connecting to Wi-Fi");
-  while (WiFi.status() != WL_CONNECTED){
+  while (WiFi.status() != WL_CONNECTED) {
     Serial.print(".");
     delay(300);
   }
@@ -69,32 +42,27 @@ void setup() {
   if (Firebase.signUp(&config, &auth, "", "")) {
     Serial.println("Ok");
     signupOK = true;
-  }
-  else {
+  } else {
     Serial.printf("%s\n", config.signer.signupError.message.c_str());
   }
 
   config.token_status_callback = tokenStatusCallback;
-  
+
   Firebase.begin(&config, &auth);
   Firebase.reconnectWiFi(true);
-
-  sendMessage("Teste");
-
-  Dabble.begin("MyEsp32");
-  pinMode(LED, OUTPUT);
 }
 
 void loop() {
+  int value = analogRead(POT_PIN);
   if (Firebase.ready() && signupOK) {
+    isCriticalValue = value * 1.0 / 4095 > 0.65;
+    Serial.println(isCriticalValue);
 
-    if (!Firebase.RTDB.setString(&fbdo, "Test", "Testing")) {
+    digitalWrite(CONN_PIN, HIGH);
+
+    if (!Firebase.RTDB.setInt(&fbdo, String("LDR_Data/") + String(millis() / 1000), value))
       Serial.println("ERRO: " + fbdo.errorReason());
-    }
-  }
 
-  Dabble.processInput();
-  Serial.print("State: ");
-  Serial.print(LedControl.getpinState());
-  digitalWrite(LED, LedControl.getpinState());
+    delay(5 * 1000);
+  }
 }
